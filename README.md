@@ -5,7 +5,24 @@ Grid system for Unity that generates and updates a square grid of objects. Each 
 You can add this package to your project by going to `Window -> Package Manager -> + -> Add Package From git URL...` and then enter `https://github.com/UniversityOfSkovde/Procedural-Grid.git`.
 
 ## Getting Started
+To try out the grid, first you need something that can draw to the scene view. Create a new script and call it "Piece". Add the following:
+```csharp
+using Grid;
+using UnityEngine;
 
+[RequireComponent(typeof(GridTile))]
+public class Piece : MonoBehaviour {
+    private void OnDrawGizmos() {
+        var tile = GetComponent<GridTile>();
+        if (tile.GetProperty(GridTileProperty.Solid)) {
+            Gizmos.color = Color.red;
+        } else {
+            Gizmos.color = Color.green;
+        }
+        Gizmos.DrawCube(transform.position, new Vector3(1, 0.1f, 1));
+    }
+}
+```
 
 ## License
 Copyright 2021 Emil Forslund
