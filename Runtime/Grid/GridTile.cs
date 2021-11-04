@@ -47,9 +47,13 @@ namespace Grid {
     /// </list>
     /// </summary>
     public class GridTile : MonoBehaviour {
+
+        public delegate void StatusEventHandler(GridTile tile);
+
+        public event StatusEventHandler Attached;
         
         internal Vector2Int _id;
-        internal bool _attached;
+        private bool _attached;
         
         public Vector2Int Id => _id;
         public bool IsAttached => _attached;
@@ -62,6 +66,13 @@ namespace Grid {
             _neighbours = neighbours;
         }
         
+        internal void SetAttached(bool val) {
+            _attached = val;
+            if (val) {
+                Attached?.Invoke(this);
+            }
+        }
+
         public bool GetProperty(GridTileProperty property) => GetProperty((int)property);
         public bool GetProperty(int property) => Bitset.Get(_bitset, property);
 

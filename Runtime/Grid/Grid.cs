@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Grid {
     [ExecuteAlways]
@@ -74,18 +77,20 @@ namespace Grid {
         
         private void RecreateTiles(Vector2Int from, Vector2Int to) {
             var selectedIds = new HashSet<Vector2Int>();
+#if UNITY_EDITOR
             foreach (var selected in Selection.gameObjects) {
                 if (selected.TryGetComponent<GridTile>(out var selectedTile)) {
                     selectedIds.Add(selectedTile.Id);
                 }
             }
+#endif
             
             var removeBuffer = new Queue<GameObject>();
             for (var i = 0; i < transform.childCount; i++) {
                 var child = transform.GetChild(i);
                 if (child.TryGetComponent<GridTile>(out var tile)) {
                     var id = tile.Id;
-                    if (tile._attached && 
+                    if (tile.IsAttached && 
                             id.x >= from.x && id.x < to.x &&
                             id.y >= from.y && id.y < to.y) {
                         removeBuffer.Enqueue(child.gameObject);
@@ -115,7 +120,7 @@ namespace Grid {
                     }
                     
                     tile.Set(_tileData[id.y * Size.x + id.x], GetNeighboursOf(id));
-                    tile._attached = true;
+                    tile.SetAttached(true);
                 }
             }
             
@@ -128,10 +133,12 @@ namespace Grid {
                     }
                 }
             }
-
+            
+#if UNITY_EDITOR
             if (objectsToSelect.Count > 0) {
                 Selection.objects = objectsToSelect.ToArray();
             }
+#endif
         }
 
         private uint[] GetNeighboursOf(Vector2Int id) {
@@ -166,7 +173,7 @@ namespace Grid {
             obj.transform.localPosition = new Vector3(position.x, 0.0f, position.y);
             obj.transform.localRotation = Quaternion.identity;
             obj.transform.localScale = Vector3.one;
-            obj.hideFlags = HideFlags.DontSave;
+            obj.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
 
             if (!obj.TryGetComponent<GridTile>(out var tile)) {
                 tile = obj.AddComponent<GridTile>();
