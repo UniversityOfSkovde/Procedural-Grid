@@ -164,6 +164,8 @@ namespace Grid {
             obj.name = $"Tile ({position.x}, {position.y})";
             obj.transform.parent = transform;
             obj.transform.localPosition = new Vector3(position.x, 0.0f, position.y);
+            obj.transform.localRotation = Quaternion.identity;
+            obj.transform.localScale = Vector3.one;
             obj.hideFlags = HideFlags.DontSave;
 
             if (!obj.TryGetComponent<GridTile>(out var tile)) {
