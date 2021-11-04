@@ -10,6 +10,9 @@ namespace Grid {
     [ExecuteAlways]
     public sealed class Grid : MonoBehaviour {
 
+        public delegate void GridEventHandler(Grid grid, GridTile[] tiles);
+        public event GridEventHandler TilesCreated;
+        
         [Min(0)]
         [Tooltip("The size (in tiles) of the map in X and Z")]
         public Vector2Int Size = new Vector2Int(5, 5);
@@ -33,7 +36,7 @@ namespace Grid {
 #if UNITY_EDITOR
             _requireFullUpdate = true;
 #else
-            Regenerate(id - Vector2Int.one, id + Vector2Int.one * 2);
+            RecreateTiles(id - Vector2Int.one, id + Vector2Int.one * 2);
 #endif
         }
 
@@ -123,7 +126,8 @@ namespace Grid {
                     tile.SetAttached(true);
                 }
             }
-            
+
+            var allTiles = new List<GridTile>();
             for (var i = 0; i < transform.childCount; i++) {
                 var child = transform.GetChild(i);
                 if (child.TryGetComponent<GridTile>(out var tile)) {
@@ -131,6 +135,7 @@ namespace Grid {
                     if (selectedIds.Contains(id)) {
                         objectsToSelect.Add(tile.gameObject);
                     }
+                    allTiles.Add(tile);
                 }
             }
             
@@ -139,6 +144,8 @@ namespace Grid {
                 Selection.objects = objectsToSelect.ToArray();
             }
 #endif
+            
+            TilesCreated?.Invoke(this, allTiles.ToArray());
         }
 
         private uint[] GetNeighboursOf(Vector2Int id) {

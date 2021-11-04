@@ -1,6 +1,6 @@
 {
     "name": "se.his.procedural-grid",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "displayName": "Procedural Grid",
     "description": "Custom Unity Package.",
     "unity": "2021.1",
