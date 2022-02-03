@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MiscUtil.Collections.Extensions;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,9 +25,68 @@ namespace Grid.Editor {
         private const float PropertyColumnWidth = 24;
         private const float PropertyColumnPadding = 3;
 
+        private Grid _grid;
+        private string[] _propertyNames;
+        private int _propertyNameSelected = 0;
+
+        private void OnEnable() {
+            _grid = FindObjectOfType<Grid>();
+            var types = StringUtil.TilePropertyTypes();
+            if (_grid == null) {
+                _propertyNameSelected = types.IndexOf(typeof(GridTileProperty));
+                if (_propertyNameSelected < 0) _propertyNameSelected = 0;
+                if (_propertyNameSelected < types.Count) {
+                    _propertyNames = StringUtil.TilePropertyNames(types[_propertyNameSelected]);
+                } else {
+                    _propertyNames = new [] { "Type A", "Type B" };
+                }
+            } else {
+                _propertyNames = _grid.PropertyNames;
+                var actualNames = _grid.PropertyNames;
+                for (var i = 0; i < types.Count; i++) {
+                    var currentNames = StringUtil.TilePropertyNames(types[i]);
+                    if (actualNames.Length != currentNames.Length) continue;
+                    var found = true;
+                    for (var j = 0; j < actualNames.Length; j++) {
+                        if (actualNames[j] != currentNames[j]) {
+                            found = false;
+                            break;
+                        }
+                    }
+
+                    if (found) {
+                        _propertyNameSelected = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void OnDisable() {
+            _grid = null;
+        }
+
         public override void OnInspectorGUI() {
             var allTiles = targets.OfType<GridTile>().ToArray();
             if (allTiles.Length == 0) return;
+
+            if (_grid == null || !allTiles[0].IsAttached) {
+                var types = StringUtil.TilePropertyTypes();
+                
+                EditorGUI.BeginChangeCheck();
+                _propertyNameSelected = EditorGUILayout.Popup("Tile Property Enum", _propertyNameSelected,
+                    types.Select(t => t.Name)
+                        .Select(StringUtil.FormatName).ToArray());
+                if (_propertyNameSelected > types.Count) _propertyNameSelected = types.Count - 1;
+                if (_propertyNameSelected < 0) _propertyNameSelected = 0;
+                if (EditorGUI.EndChangeCheck()) {
+                    if (_propertyNameSelected < types.Count) {
+                        _propertyNames = StringUtil.TilePropertyNames(types[_propertyNameSelected]);
+                    }
+                }
+            } else {
+                _propertyNames = GetPropertyNames();
+            }
 
             EditorGUILayout.BeginVertical();
 
@@ -37,11 +97,10 @@ namespace Grid.Editor {
         }
 
         private void DrawHeaders() {
-            var propertyNames  = Enum.GetNames(typeof(GridTileProperty)).Select(FormatName).ToArray();
-            var propertyValues = Enum.GetValues(typeof(GridTileProperty)).Cast<GridTileProperty>().ToArray();
+            var propertyNames = _propertyNames;
             
             var maxWidth = 0.0f;
-            for (var propIdx = 0; propIdx < propertyValues.Length; propIdx++) {
+            for (var propIdx = 0; propIdx < propertyNames.Length; propIdx++) {
                 var content = new GUIContent(propertyNames[propIdx]);
                 var textDimensions = GUI.skin.label.CalcSize(content);
                 if (textDimensions.x > maxWidth) {
@@ -58,8 +117,8 @@ namespace Grid.Editor {
             
             GUIUtility.RotateAroundPivot(90, rect.position);
             
-            for (var propIdx = 0; propIdx < propertyValues.Length; propIdx++) {
-                var content = new GUIContent(propertyNames[propertyValues.Length - propIdx - 1]);
+            for (var propIdx = 0; propIdx < propertyNames.Length; propIdx++) {
+                var content = new GUIContent(propertyNames[propertyNames.Length - propIdx - 1]);
                 var textDimensions = GUI.skin.label.CalcSize(content);
                 rect.x = originalX + maxWidth - textDimensions.x;
                 GUI.Label(rect, content);
@@ -70,12 +129,12 @@ namespace Grid.Editor {
         }
 
         private void DrawRows(GridTile[] tiles) {
-            var propertyValues = Enum.GetValues(typeof(GridTileProperty)).Cast<GridTileProperty>().ToArray();
+            var propertyNames = _propertyNames;
             
             // Draw Center
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Center", GUILayout.Width(LabelColumnWidth));
-            for (var propIdx = 0; propIdx < propertyValues.Length; propIdx++) {
+            for (var propIdx = 0; propIdx < propertyNames.Length; propIdx++) {
                 var oldValue = tiles[0].GetProperty(propIdx);
                 EditorGUI.BeginChangeCheck();
 
@@ -102,7 +161,7 @@ namespace Grid.Editor {
 
                 var attached = tiles[0].IsAttached;
                 EditorGUI.BeginDisabledGroup(attached);
-                for (var propIdx = 0; propIdx < propertyValues.Length; propIdx++) {
+                for (var propIdx = 0; propIdx < propertyNames.Length; propIdx++) {
                     ShowMixedValue(tiles, neighbourIdx, propIdx);
                     var oldValue = tiles[0].GetNeighbourProperty(neighbourIdx, propIdx);
                     if (!attached) EditorGUI.BeginChangeCheck();
@@ -121,8 +180,14 @@ namespace Grid.Editor {
             }
         }
 
-        private static string FormatName(string name) {
-            return Regex.Replace(name, "(\\B[A-Z])", " $1");
+        private string[] GetPropertyNames() {
+            string[] propertyNames;
+            if (_grid != null && _grid.TryGetPropertyNames(out var names)) {
+                propertyNames = names.Select(StringUtil.FormatName).ToArray();
+            } else {
+                propertyNames = Enum.GetNames(typeof(GridTileProperty)).Select(StringUtil.FormatName).ToArray();
+            }
+            return propertyNames;
         }
 
         private static bool ShowMixedValue(GridTile[] selection, int neighbour, int property) {

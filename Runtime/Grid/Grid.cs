@@ -20,12 +20,29 @@ namespace Grid {
         [SerializeField]
         [Tooltip("Prefab that is spawned for each tile in the Dungeon.")]
         private GameObject TilePrefab;
+
+        [Space]
+        
+        [SerializeField, HideInInspector]
+        [Tooltip("Names for the types as they should appear in the editor (it is the order that is important)")]
+        internal string[] PropertyNames =
+            typeof(GridTileProperty).GetEnumNames();
         
         [SerializeField, HideInInspector]
         private uint[] _tileData;
         
         void Start() {
             RecreateTiles();
+        }
+
+        public bool TryGetPropertyNames(out List<string> names) {
+            if (PropertyNames != null && PropertyNames.Length > 0) {
+                names = new List<string>(PropertyNames);
+                return true;
+            }
+
+            names = null;
+            return false;
         }
 
         public void SetTileProperties(Vector2Int id, uint properties) {

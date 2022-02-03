@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Grid {
     
@@ -72,7 +73,19 @@ namespace Grid {
                 Attached?.Invoke(this);
             }
         }
-
+        
+#if CSHARP_7_3_OR_NEWER
+        public bool GetProperty<T>(T property) where T : Enum => GetProperty(Convert.ToInt32(property));
+        public void SetProperty<T>(T property, bool value) where T : Enum  => SetProperty(Convert.ToInt32(property), value);
+        public bool GetNeighbourProperty<T>(int neighbour, T property) where T : Enum => GetNeighbourProperty(neighbour, Convert.ToInt32(property));
+        public void SetNeighbourProperty<T>(int neighbour, T property, bool value) where T : Enum => SetNeighbourProperty(neighbour, Convert.ToInt32(property), value);
+#else
+        public bool GetProperty<T>(T property) where T : struct, IConvertible => GetProperty(Convert.ToInt32(property));
+        public void SetProperty<T>(T property, bool value) where T : struct, IConvertible  => SetProperty(Convert.ToInt32(property), value);
+        public bool GetNeighbourProperty<T>(int neighbour, T property) where T : struct, IConvertible => GetNeighbourProperty(neighbour, Convert.ToInt32(property));
+        public void SetNeighbourProperty<T>(int neighbour, T property, bool value) where T : struct, IConvertible => SetNeighbourProperty(neighbour, Convert.ToInt32(property), value);
+#endif
+        
         public bool GetProperty(GridTileProperty property) => GetProperty((int)property);
         public bool GetProperty(int property) => Bitset.Get(_bitset, property);
 

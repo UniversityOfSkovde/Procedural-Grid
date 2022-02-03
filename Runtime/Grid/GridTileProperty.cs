@@ -1,7 +1,10 @@
 namespace Grid {
     public enum GridTileProperty {
-        Solid,
-        Water,
-        // Road  // <- Try uncommenting this to see it show up in the inspector!
+        // You can copy this file into your 'Assets'-folder and add more types
+        // than these. Also remember to update the 'PropertyNames' property in
+        // the grid.
+        
+        Solid = 0,
+        Water = 1
     }
 }
