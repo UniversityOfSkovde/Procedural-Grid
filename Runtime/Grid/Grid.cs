@@ -37,7 +37,7 @@ namespace Grid {
         [Serializable]
         private struct CellData {
             public uint Properties;
-            public String JsonData;
+            public string JsonData;
 
             public CellData(uint properties, string jsonData) {
                 Properties = properties;
@@ -100,7 +100,7 @@ namespace Grid {
             SetTileProperties(id, bitset);
         }
 
-        public String GetTileData(Vector2Int id) {
+        public string GetTileData(Vector2Int id) {
             if (!IsInside(id)) return null;
             EnsureGridCapacity();
             return _cellData[IndexOf(id)].JsonData;
@@ -110,18 +110,18 @@ namespace Grid {
             if (!IsInside(id)) return default;
             EnsureGridCapacity();
             var data = _cellData[IndexOf(id)].JsonData;
-            return data == null ? default : JsonUtility.FromJson<T>(data);
+            return data == null || data.Equals("") ? default : JsonUtility.FromJson<T>(data);
         }
         
         public void GetTileDataOverwrite<T>(Vector2Int id, T existing) {
             if (!IsInside(id)) return;
             EnsureGridCapacity();
             var data = _cellData[IndexOf(id)].JsonData;
-            if (data == null) return;
-            JsonUtility.FromJsonOverwrite(_cellData[IndexOf(id)].JsonData, existing);
+            if (data == null || data.Equals("")) return;
+            JsonUtility.FromJsonOverwrite(data, existing);
         }
 
-        public void SetTileData(Vector2Int id, String json) {
+        public void SetTileData(Vector2Int id, string json) {
             if (!IsInside(id)) return;
             EnsureGridCapacity();
             var idx = IndexOf(id);

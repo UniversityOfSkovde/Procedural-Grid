@@ -132,14 +132,19 @@ namespace Grid {
             Bitset.Set(ref _neighbours[neighbour], property, value);
         }
 
-        public String GetData() => _data;
+        public string GetData() => _data;
 
-        public T GetData<T>() => JsonUtility.FromJson<T>(_data);
+        public T GetData<T>() {
+            if (_data == null || "".Equals(_data)) return default;
+            return JsonUtility.FromJson<T>(_data);
+        }
 
-        public void GetDataOverwrite<T>(T target) => 
+        public void GetDataOverwrite<T>(T target) {
+            if (_data == null || "".Equals(_data)) return;
             JsonUtility.FromJsonOverwrite(_data, target);
-
-        public void SetData(String json) {
+        }
+        
+        public void SetData(string json) {
             if (string.Equals(_data, json, StringComparison.InvariantCulture)) 
                 return; // If no changed were made, do nothing.
             
@@ -154,7 +159,10 @@ namespace Grid {
         }
 
         public void SetData<T>(T data) {
-            var json = JsonUtility.ToJson(data);
+            var json = (string) null;
+            if (data != null && !"".Equals(data)) {
+                json = JsonUtility.ToJson(data);
+            }
             SetData(json);
         }
 
