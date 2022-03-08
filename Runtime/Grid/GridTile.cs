@@ -89,7 +89,7 @@ namespace Grid {
         public bool GetProperty(GridTileProperty property) => GetProperty((int)property);
         public bool GetProperty(int property) => Bitset.Get(_bitset, property);
 
-        public uint Bitset => _bitset;
+        public uint GetBitset() => _bitset;
         
         public void SetProperty(GridTileProperty property, bool value) => SetProperty((int)property, value);
         public void SetProperty(int property, bool value) {
