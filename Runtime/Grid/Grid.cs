@@ -8,7 +8,7 @@ using UnityEditor;
 
 namespace Grid {
     [ExecuteAlways]
-    public sealed class Grid : MonoBehaviour {
+    public sealed class Grid : MonoBehaviour, ISerializationCallbackReceiver {
 
         public delegate void GridEventHandler(Grid grid, GridTile[] tiles);
         public event GridEventHandler TilesCreated;
@@ -29,7 +29,21 @@ namespace Grid {
             typeof(GridTileProperty).GetEnumNames();
         
         [SerializeField, HideInInspector]
+        private CellData[] _cellData;
+
+        [SerializeField, HideInInspector] 
         private uint[] _tileData;
+        
+        [Serializable]
+        private struct CellData {
+            public uint Properties;
+            public String JsonData;
+
+            public CellData(uint properties, string jsonData) {
+                Properties = properties;
+                JsonData = jsonData;
+            }
+        }
         
         void Start() {
             RecreateTiles();
@@ -51,20 +65,17 @@ namespace Grid {
         public void SetTileProperties(Vector2Int id, uint properties) {
             if (!IsInside(id)) return;
             EnsureGridCapacity();
-            _tileData[id.y * Size.x + id.x] = properties;
-#if UNITY_EDITOR
-            _requireFullUpdate = true;
-#else
-            RecreateTiles(id - Vector2Int.one, id + Vector2Int.one * 2);
-#endif
+            var idx = IndexOf(id);
+            _cellData[idx] = new CellData(properties, _cellData[idx].JsonData);
+            UpdateGridAround(id);
         }
 
         public uint GetTileProperties(Vector2Int id) {
             if (!IsInside(id)) return 0;
             EnsureGridCapacity();
-            return _tileData[id.y * Size.x + id.x];
+            return _cellData[IndexOf(id)].Properties;
         }
-        
+
 #if CSHARP_7_3_OR_NEWER
         public bool GetTileProperty<T>(Vector2Int id, T property) where T : Enum => GetTileProperty(id, Convert.ToInt32(property));
         public void SetTileProperty<T>(Vector2Int id, T property, bool value) where T : Enum  => SetTileProperty(id, Convert.ToInt32(property), value);
@@ -89,16 +100,82 @@ namespace Grid {
             SetTileProperties(id, bitset);
         }
 
+        public String GetTileData(Vector2Int id) {
+            if (!IsInside(id)) return null;
+            EnsureGridCapacity();
+            return _cellData[IndexOf(id)].JsonData;
+        }
+        
+        public T GetTileData<T>(Vector2Int id) {
+            if (!IsInside(id)) return default;
+            EnsureGridCapacity();
+            var data = _cellData[IndexOf(id)].JsonData;
+            return data == null ? default : JsonUtility.FromJson<T>(data);
+        }
+        
+        public void GetTileDataOverwrite<T>(Vector2Int id, T existing) {
+            if (!IsInside(id)) return;
+            EnsureGridCapacity();
+            var data = _cellData[IndexOf(id)].JsonData;
+            if (data == null) return;
+            JsonUtility.FromJsonOverwrite(_cellData[IndexOf(id)].JsonData, existing);
+        }
+
+        public void SetTileData(Vector2Int id, String json) {
+            if (!IsInside(id)) return;
+            EnsureGridCapacity();
+            var idx = IndexOf(id);
+            var existing = _cellData[idx];
+            _cellData[idx] = new CellData(existing.Properties, json);
+            UpdateGridAround(id);
+        }
+
+        public void SetTileData<T>(Vector2Int id, T data) {
+            if (!IsInside(id)) return;
+            EnsureGridCapacity();
+            var idx = IndexOf(id);
+            var existing = _cellData[idx];
+            var json = JsonUtility.ToJson(data, false);
+            _cellData[idx] = new CellData(existing.Properties, json);
+            UpdateGridAround(id);
+        }
+
+        private void UpdateGridAround(Vector2Int id) {
+#if UNITY_EDITOR
+            _requireFullUpdate = true;
+#else
+            RecreateTiles(id - Vector2Int.one, id + Vector2Int.one * 2);
+#endif
+        }
+
         private void EnsureGridCapacity() {
             var size = Size.x * Size.y;
-            if (_tileData == null) {
-                _tileData = new uint[size];
-            } else if (_tileData.Length < size) {
-                var newArray = new uint[size];
-                for (var i = 0; i < _tileData.Length; i++) {
-                    newArray[i] = _tileData[i];
+            if (_cellData == null) {
+                _cellData = new CellData[size];
+            } else if (_cellData.Length < size) {
+                var newArray = new CellData[size];
+                for (var i = 0; i < _cellData.Length; i++) {
+                    newArray[i] = _cellData[i];
                 }
-                _tileData = newArray;
+                _cellData = newArray;
+            }
+        }
+
+        public void OnBeforeSerialize() {
+            _tileData = Array.Empty<uint>();
+        }
+
+        public void OnAfterDeserialize() {
+            // This is only for backwards compatability. The first time a grid
+            // is loaded in version 1.1.0, tile properties are moved from
+            // _tileData to _cellData. 
+            if (_tileData.Length > 0) {
+                EnsureGridCapacity();
+                var count = Math.Min(_tileData.Length, Size.x * Size.y);
+                for (var i = 0; i < count; i++) {
+                    var properties = _tileData[i];
+                    _cellData[i] = new CellData(properties, _cellData[i].JsonData);
+                }
             }
         }
 
@@ -170,8 +247,10 @@ namespace Grid {
                     if (selectedIds.Contains(id)) {
                         objectsToSelect.Add(tile.gameObject);
                     }
-                    
-                    tile.Set(_tileData[id.y * Size.x + id.x], GetNeighboursOf(id));
+
+                    var idx = IndexOf(id);
+                    var tileData = _cellData[idx];
+                    tile.Set(tileData.Properties, GetNeighboursOf(id), tileData.JsonData);
                     tile.SetAttached(true);
                 }
             }
@@ -202,18 +281,12 @@ namespace Grid {
             var step = Vector2Int.right;
             var diag = Vector2Int.one;
             for (var i = 0; i < 4; i++) {
-                neighbours[i * 2]     = TryGetBitset(id + step);
-                neighbours[i * 2 + 1] = TryGetBitset(id + diag);
+                neighbours[i * 2]     = GetTileProperties(id + step);
+                neighbours[i * 2 + 1] = GetTileProperties(id + diag);
                 step = new Vector2Int(-step.y, step.x);
                 diag = new Vector2Int(-diag.y, diag.x);
             }
             return neighbours;
-        }
-
-        private uint TryGetBitset(Vector2Int id) {
-            if (id.x < 0 || id.x >= Size.x ||
-                id.y < 0 || id.y >= Size.y) return 0;
-            return _tileData[id.y * Size.x + id.x];
         }
         
         private GridTile CreateTile(Vector2Int position) {
@@ -246,5 +319,7 @@ namespace Grid {
                 DestroyImmediate(child);
             }
         }
+
+        private int IndexOf(Vector2Int id) => id.y * Size.x + id.x;
     }
 }

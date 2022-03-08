@@ -61,10 +61,12 @@ namespace Grid {
         
         [SerializeField, HideInInspector] private uint _bitset = 0u;
         [SerializeField, HideInInspector] private uint[] _neighbours = new uint[8];
-
-        internal void Set(uint bitset, uint[] neighbours) {
+        [SerializeField, HideInInspector] private String _data;
+        
+        internal void Set(uint bitset, uint[] neighbours, String data) {
             _bitset     = bitset;
             _neighbours = neighbours;
+            _data       = data;
         }
         
         internal void SetAttached(bool val) {
@@ -128,6 +130,32 @@ namespace Grid {
             }
             EnsureNeighbourSize();
             Bitset.Set(ref _neighbours[neighbour], property, value);
+        }
+
+        public String GetData() => _data;
+
+        public T GetData<T>() => JsonUtility.FromJson<T>(_data);
+
+        public void GetDataOverwrite<T>(T target) => 
+            JsonUtility.FromJsonOverwrite(_data, target);
+
+        public void SetData(String json) {
+            if (string.Equals(_data, json, StringComparison.InvariantCulture)) 
+                return; // If no changed were made, do nothing.
+            
+            _data = json;
+            
+            // If the tile is attached to a Grid, send the modification up to the parent
+            if (IsAttached) {
+                // Enqueue property change
+                var parent = transform.parent.GetComponent<Grid>();
+                parent.SetTileData(Id, _data);
+            }
+        }
+
+        public void SetData<T>(T data) {
+            var json = JsonUtility.ToJson(data);
+            SetData(json);
         }
 
         private void EnsureNeighbourSize() {
