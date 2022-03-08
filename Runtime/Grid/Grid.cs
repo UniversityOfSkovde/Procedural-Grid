@@ -45,9 +45,11 @@ namespace Grid {
             return false;
         }
 
+        public bool IsInside(Vector2Int id) => id.x >= 0 && id.x < Size.x &&
+                                               id.y >= 0 && id.y < Size.y;
+
         public void SetTileProperties(Vector2Int id, uint properties) {
-            if (id.x < 0 || id.x >= Size.x ||
-                id.y < 0 || id.y >= Size.y) return;
+            if (!IsInside(id)) return;
             EnsureGridCapacity();
             _tileData[id.y * Size.x + id.x] = properties;
 #if UNITY_EDITOR
@@ -55,6 +57,36 @@ namespace Grid {
 #else
             RecreateTiles(id - Vector2Int.one, id + Vector2Int.one * 2);
 #endif
+        }
+
+        public uint GetTileProperties(Vector2Int id) {
+            if (!IsInside(id)) return 0;
+            EnsureGridCapacity();
+            return _tileData[id.y * Size.x + id.x];
+        }
+        
+#if CSHARP_7_3_OR_NEWER
+        public bool GetTileProperty<T>(Vector2Int id, T property) where T : Enum => GetTileProperty(id, Convert.ToInt32(property));
+        public void SetTileProperty<T>(Vector2Int id, T property, bool value) where T : Enum  => SetTileProperty(id, Convert.ToInt32(property), value);
+#else
+        public bool GetTileProperty<T>(Vector2Int id, T property) where T : struct, IConvertible => GetTileProperty(id, Convert.ToInt32(property));
+        public void SetTileProperty<T>(Vector2Int id, T property, bool value) where T : struct, IConvertible  => SetTileProperty(id, Convert.ToInt32(property), value);
+#endif
+        
+        public bool GetTileProperty(Vector2Int id, GridTileProperty property) => GetTileProperty(id, (int)property);
+
+        public bool GetTileProperty(Vector2Int id, int property) {
+            var bitset = GetTileProperties(id);
+            return Bitset.Get(bitset, property);
+        }
+        
+        public void SetTileProperty(Vector2Int id, GridTileProperty property, bool value) => SetTileProperty(id, (int)property, value);
+        
+        public void SetTileProperty(Vector2Int id, int property, bool value) {
+            if (GetTileProperty(id, property) == value) return;
+            var bitset = GetTileProperties(id);
+            Bitset.Set(ref bitset, property, value);
+            SetTileProperties(id, bitset);
         }
 
         private void EnsureGridCapacity() {
