@@ -46,7 +46,11 @@ namespace Grid {
         }
         
         void Start() {
+#if UNITY_EDITOR
+            UpdateOnceIfNecessary();
+#else
             RecreateTiles();
+#endif
         }
 
         public bool TryGetPropertyNames(out List<string> names) {
@@ -192,11 +196,17 @@ namespace Grid {
         }
         
         private void OnEnable() {
-            EditorApplication.update += UpdateOnceIfNecessary;
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update += UpdateOnceIfNecessary;
+            }
         }
         
         private void OnDisable() {
-            EditorApplication.update -= UpdateOnceIfNecessary;
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update -= UpdateOnceIfNecessary;
+            }
         }
 #endif
 
