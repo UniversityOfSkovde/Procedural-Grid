@@ -16,6 +16,7 @@
 # Cache directories of various applications
 .vs/
 .gradle/
+.idea/
 
 # Solution files should not be included
 # (since this is not the main project but a package.)
