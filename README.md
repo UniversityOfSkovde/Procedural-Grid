@@ -7,7 +7,7 @@ You can add this package to your project by going to `Window -> Package Manager 
 ## Getting Started
 To try out the grid, first you need something that can draw to the scene view. Create a new script and call it "Piece". Add the following:
 ```csharp
-using Grid;
+using Grid_HIS;
 using UnityEngine;
 
 [RequireComponent(typeof(GridTile))]
@@ -34,10 +34,10 @@ if (tile.GetNeighbourProperty(0, GridTileProperty.Solid)) {
 }
 ```
 
-Each neighbour has an index. The indices goes in counter-clockwise order starting at the neighbour to the right (index = 0), then up-right (index = 1), then up (index = 2) and so on. `GridTileProperty` is an enum that defines all the boolean properties that can be stored in the grid. By default, it has two properties; `Solid` and `Water`. If you copy this enum into your Assets-folder, you can change it and the GUI will automatically pick up the new properties. Just make sure you still set the namespace to `Grid`.
+Each neighbour has an index. The indices goes in counter-clockwise order starting at the neighbour to the right (index = 0), then up-right (index = 1), then up (index = 2) and so on. `GridTileProperty` is an enum that defines all the boolean properties that can be stored in the grid. By default, it has two properties; `Solid` and `Water`. If you copy this enum into your Assets-folder, you can change it and the GUI will automatically pick up the new properties. Just make sure you still set the namespace to `Grid_HIS`.
 
 ```csharp
-namespace Grid {
+namespace Grid_HIS {
     public enum MyTestEnum {
         Forest, Hills, Mountains, River
     }

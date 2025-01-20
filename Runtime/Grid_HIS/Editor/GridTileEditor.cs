@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Grid.Editor {
+namespace Grid_HIS.Editor {
     [CustomEditor(typeof(GridTile)), CanEditMultipleObjects]
     public class GridTileEditor : UnityEditor.Editor {
 

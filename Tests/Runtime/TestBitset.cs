@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace Grid {
+namespace Grid_HIS {
     [TestFixture]
     public class TestBitset {
 

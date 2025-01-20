@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 
-namespace Grid.Editor {
+namespace Grid_HIS.Editor {
     public static class StringUtil {
         public static string FormatName(string name) {
             return Regex.Replace(name, "(\\B[A-Z])", " $1");
@@ -12,7 +12,7 @@ namespace Grid.Editor {
 
         public static List<Type> TilePropertyTypes() {
             return TypeCache.GetTypesDerivedFrom<Enum>()
-                .Where(t => t.Namespace == "Grid")
+                .Where(t => t.Namespace == "Grid_HIS")
                 .ToList();
         }
 

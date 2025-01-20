@@ -1,4 +1,4 @@
-﻿namespace Grid {
+﻿namespace Grid_HIS {
     public static class Bitset {
         public static bool Get(uint bitset, int property) {
             return 0u != (bitset & (1u << property));

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Grid {
+namespace Grid_HIS {
     
     /// <summary>
     /// Each tile has an id (the local position as a <c>Vector2Int</c>)

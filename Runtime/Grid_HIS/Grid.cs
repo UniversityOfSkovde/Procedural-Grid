@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Grid {
+namespace Grid_HIS {
     [ExecuteAlways]
     public sealed class Grid : MonoBehaviour, ISerializationCallbackReceiver {
 

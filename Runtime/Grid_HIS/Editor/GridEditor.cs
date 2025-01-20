@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using UnityEditor;
 
-namespace Grid.Editor {
+namespace Grid_HIS.Editor {
     [CustomEditor(typeof(Grid))]
     public class GridEditor : UnityEditor.Editor {
         
